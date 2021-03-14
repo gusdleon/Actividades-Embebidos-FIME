@@ -42,19 +42,64 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+int D1=0x70 ;//Y7
+int D2=0x60;
+int D3=0x50;
+int D4=0x40;
+int D5=0x30;
+int D6=0x20;
+int D7=0x10;
+int D8=0x00; //Y0
+int numero=0;
+int numeros[10]={0x0,0x01,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+void displayNumber(int numero);
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8);
+void buttonPress();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void displayNumber (int count){
+	int dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8;
+	dig1=count%10; //almacenar el 1
+	dig2=(count%100)/10; //almacenar el 2
+	dig3=(count%1000)/100; //almacenar el 3
+	dig4=(count%10000)/1000; //almacenar el 4
+	dig5=(count%100000)/10000; //almacenar el 5
+	dig6=(count%1000000)/100000; //almacenar el 6
+	dig7=(count%10000000)/1000000; //almacenar el 7
+	dig8=(count%100000000)/10000000; //almacenar el 8
+	setDisplay(dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8);
+}
 
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8){
+	GPIOD->ODR=numeros[dig1]+D1;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig2]+D2;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig3]+D3;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig4]+D4;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig5]+D5;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig6]+D6;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig7]+D7;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig8]+D8;
+	HAL_Delay(1);
+}
+
+void buttonPress(){
+	numero++;
+}
 /* USER CODE END 0 */
 
 /**
@@ -96,6 +141,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  displayNumber(numero);
   }
   /* USER CODE END 3 */
 }
@@ -284,7 +330,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(GPIO_Pin);
+  buttonPress();
+}
 /* USER CODE END 4 */
 
 /**
