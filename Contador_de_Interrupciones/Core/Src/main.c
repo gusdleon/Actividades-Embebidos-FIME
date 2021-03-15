@@ -52,6 +52,8 @@ int D7=0x10;
 int D8=0x00; //Y0
 int numero=0;
 int numeros[10]={0x0,0x01,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9};
+unsigned short tiempoDebounce = 100;
+unsigned int tickAnterior = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,7 +100,10 @@ void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int 
 }
 
 void buttonPress(){
-	numero++;
+	if((HAL_GetTick() - tickAnterior) > tiempoDebounce){
+		numero++;
+		tickAnterior = HAL_GetTick();
+	}
 }
 /* USER CODE END 0 */
 
