@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,19 +43,61 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+int D1=0x70 ;//Y7
+int D2=0x60;
+int D3=0x50;
+int D4=0x40;
+int D5=0x30;
+int D6=0x20;
+int D7=0x10;
+int D8=0x00; //Y0
+int dn=0;
+int numeros[10]={0x0,0x01,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9};
+unsigned short tiempoDebounce = 100;
+unsigned int tickAnterior = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+void displayNumber(int numero);
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void displayNumber (int count){
+	int dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8;
+	dig1=count%10; //almacenar el 1
+	dig2=(count%100)/10; //almacenar el 2
+	dig3=(count%1000)/100; //almacenar el 3
+	dig4=(count%10000)/1000; //almacenar el 4
+	dig5=(count%100000)/10000; //almacenar el 5
+	dig6=(count%1000000)/100000; //almacenar el 6
+	dig7=(count%10000000)/1000000; //almacenar el 7
+	dig8=(count%100000000)/10000000; //almacenar el 8
+	setDisplay(dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8);
+}
 
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8){
+	GPIOD->ODR=numeros[dig1]+D1;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig2]+D2;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig3]+D3;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig4]+D4;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig5]+D5;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig6]+D6;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig7]+D7;
+	HAL_Delay(1);
+	GPIOD->ODR=numeros[dig8]+D8;
+	HAL_Delay(1);
+}
 /* USER CODE END 0 */
 
 /**
@@ -96,6 +139,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  displayNumber(dn);
+	  HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
@@ -169,8 +214,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
-                          |GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+                          |pin_7_74LS47_Pin_Pin|pin_1_74LS47_Pin_Pin|pin_2_74LS47_Pin_Pin|pin_6_74LS47_Pin_Pin
+                          |pin_1_74HC238_Pin_Pin|pin_2_74HC238_Pin_Pin|pin_3_74HC238_Pin_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : CS_I2C_SPI_Pin */
   GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
@@ -230,12 +275,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin
-                           PD0 PD1 PD2 PD3
-                           PD4 PD5 PD6 */
-  GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
-                          |GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin */
+  GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -263,6 +304,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : pin_7_74LS47_Pin_Pin pin_1_74LS47_Pin_Pin pin_2_74LS47_Pin_Pin pin_6_74LS47_Pin_Pin
+                           pin_1_74HC238_Pin_Pin pin_2_74HC238_Pin_Pin pin_3_74HC238_Pin_Pin */
+  GPIO_InitStruct.Pin = pin_7_74LS47_Pin_Pin|pin_1_74LS47_Pin_Pin|pin_2_74LS47_Pin_Pin|pin_6_74LS47_Pin_Pin
+                          |pin_1_74HC238_Pin_Pin|pin_2_74HC238_Pin_Pin|pin_3_74HC238_Pin_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /*Configure GPIO pins : Audio_SCL_Pin Audio_SDA_Pin */
   GPIO_InitStruct.Pin = Audio_SCL_Pin|Audio_SDA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -284,7 +334,17 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(GPIO_Pin);
+  if(GPIO_Pin == GPIO_PIN_0){
+	  unsigned int se = HAL_GetTick();
+	  srand(se);
+	  dn= rand() % 100000000;
+	}
 
+}
 /* USER CODE END 4 */
 
 /**
