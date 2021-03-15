@@ -339,9 +339,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   /* Prevent unused argument(s) compilation warning */
   UNUSED(GPIO_Pin);
   if(GPIO_Pin == GPIO_PIN_0){
-	  unsigned int se = HAL_GetTick();
-	  srand(se);
-	  dn= rand() % 100000000;
+	  if((HAL_GetTick() - tickAnterior) > tiempoDebounce){
+		  unsigned int se = HAL_GetTick();
+		  srand(se);
+		  dn= rand() % 100000000;
+		  tickAnterior = HAL_GetTick();
+	  }
 	}
 
 }
