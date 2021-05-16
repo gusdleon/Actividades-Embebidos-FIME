@@ -71,10 +71,37 @@ static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 void displayNumber(int numero);
 void setDisplay(int dig1, int dig2,/* int dig3,*/ int dig4, int dig5,/* int dig6,*/ int dig7, int dig8);
+void leerhora();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void leerhora(){
+	if(ic!=0){
+		HAL_ADC_Start(&hadc1);
+		if(HAL_ADC_PollForConversion(&hadc1, 5) == HAL_OK){
+			if(ic==1){
+				aTime1.Hours = HAL_ADC_GetValue(&hadc1)/178;
+			}
+			if(ic==2){
+				aTime1.Minutes = HAL_ADC_GetValue(&hadc1)/69;
+			}
+			if(ic==3){
+				aTime1.Seconds = HAL_ADC_GetValue(&hadc1)/69;
+			}
+		}
+		HAL_ADC_Stop(&hadc1);
+		HAL_RTC_SetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
+	}
+	HAL_RTC_GetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &aDate1, RTC_FORMAT_BIN);
+
+	dn = aTime1.Hours * 1000000;
+	dn += aTime1.Minutes * 1000;
+	dn += aTime1.Seconds;
+}
+
 /**
   * @brief Prepara el valor de entrada
   * para utilizarlo en los displays.
@@ -173,29 +200,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(ic!=0){
-		  HAL_ADC_Start(&hadc1);
-		  if(HAL_ADC_PollForConversion(&hadc1, 5) == HAL_OK){
-			  if(ic==1){
-				  aTime1.Hours = HAL_ADC_GetValue(&hadc1)/178;
-			  }
-			  if(ic==2){
-				  aTime1.Minutes = HAL_ADC_GetValue(&hadc1)/69;
-			  }
-			  if(ic==3){
-				  aTime1.Seconds = HAL_ADC_GetValue(&hadc1)/69;
-			  }
-		  }
-		  HAL_ADC_Stop(&hadc1);
-		  HAL_RTC_SetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
-	  }
-
-	  HAL_RTC_GetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
-	  HAL_RTC_GetDate(&hrtc, &aDate1, RTC_FORMAT_BIN);
-
-	  dn = aTime1.Hours * 1000000;
-	  dn += aTime1.Minutes * 1000;
-	  dn += aTime1.Seconds;
+	  leerhora();
 	  displayNumber(dn);
   }
   /* USER CODE END 3 */
