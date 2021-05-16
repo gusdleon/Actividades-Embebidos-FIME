@@ -40,85 +40,59 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-
-RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN PV */
 int D1=0x70 ;//Y7
 int D2=0x60;
-//int D3=0x50;
+int D3=0x50;
 int D4=0x40;
 int D5=0x30;
-//int D6=0x20;
+int D6=0x20;
 int D7=0x10;
-int D8=0x00; //Y0
-int numeros[10]={0x0,0x01,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9}; //numeros del 0 al 9 en HEX.
-
-int dn; //Numero a mostrar.
-int ic=0; //Contador de interrupciones.
-unsigned short tiempoDebounce = 500; //ms antes de siguiente interrupcion.
-unsigned int tickAnterior = 0; //tiempo en el que ocurrio la ultima interrupcion.
-RTC_TimeTypeDef aTime1; //estructura de tiempo.
-RTC_DateTypeDef aDate1; //estructura de fecha.
+int D8=0x00;
+int numeros[10]={0x0,0x01,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9};
+char key;
+char keys [4][3]={
+		{1,2,3},
+		{4,5,6},
+		{7,8,9},
+		{0,0,0}
+};
+unsigned short column[4]={GPIO_PIN_3, GPIO_PIN_2, GPIO_PIN_1, GPIO_PIN_0};
+unsigned short row[4]={GPIO_PIN_14, GPIO_PIN_13, GPIO_PIN_12, GPIO_PIN_11};
+int KeyboardNumber;
+unsigned short tiempoDebounce = 200;
+unsigned int tickAnterior = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
-void leerhora();
+void keyHandle(short);
 void displayNumber(int numero);
-void setDisplay(int dig1, int dig2,/* int dig3,*/ int dig4, int dig5,/* int dig6,*/ int dig7, int dig8);
-void leerhora();
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void leerhora(){
-	if(ic!=0){
-		HAL_ADC_Start(&hadc1);
-		if(HAL_ADC_PollForConversion(&hadc1, 5) == HAL_OK){
-			if(ic==1){
-				aTime1.Hours = HAL_ADC_GetValue(&hadc1)/178;
-			}
-			if(ic==2){
-				aTime1.Minutes = HAL_ADC_GetValue(&hadc1)/69;
-			}
-			if(ic==3){
-				aTime1.Seconds = HAL_ADC_GetValue(&hadc1)/69;
-			}
-		}
-		HAL_ADC_Stop(&hadc1);
-		HAL_RTC_SetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
-	}
-	HAL_RTC_GetTime(&hrtc, &aTime1, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &aDate1, RTC_FORMAT_BIN);
-
-	dn = aTime1.Hours * 1000000;
-	dn += aTime1.Minutes * 1000;
-	dn += aTime1.Seconds;
-}
-
 /**
-  * @brief Prepara el valor de entrada
-  * para utilizarlo en los displays.
-  * @param[in] count numero entero de 1 a 8 digitos.
+  * @brief Toma el valor de entrada
+  * y los descompone en digitos individuales.
+  * @param int
   * @retval None
   */
 void displayNumber (int count){
-	int dig1,dig2,/*dig3,*/dig4,dig5,/*dig6,*/dig7,dig8;
+	int dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8;
 	dig1=count%10; //almacenar el 1
 	dig2=(count%100)/10; //almacenar el 2
-	//dig3=(count%1000)/100; //almacenar el 3
+	dig3=(count%1000)/100; //almacenar el 3
 	dig4=(count%10000)/1000; //almacenar el 4
 	dig5=(count%100000)/10000; //almacenar el 5
-	//dig6=(count%1000000)/100000; //almacenar el 6
+	dig6=(count%1000000)/100000; //almacenar el 6
 	dig7=(count%10000000)/1000000; //almacenar el 7
 	dig8=(count%100000000)/10000000; //almacenar el 8
-	setDisplay(dig1,dig2,/*dig3,*/dig4,dig5,/*dig6,*/dig7,dig8);
+	setDisplay(dig1,dig2,dig3,dig4,dig5,dig6,dig7,dig8);
 }
 
 /**
@@ -128,34 +102,44 @@ void displayNumber (int count){
   * @see displayNumber()
   * @retval None
   */
-void setDisplay(int dig1, int dig2,/* int dig3,*/ int dig4, int dig5,/* int dig6,*/ int dig7, int dig8){
+void setDisplay(int dig1, int dig2, int dig3, int dig4, int dig5, int dig6, int dig7, int dig8){
 	GPIOD->ODR=numeros[dig1]+D1;
 	HAL_Delay(1);
 	GPIOD->ODR=numeros[dig2]+D2;
 	HAL_Delay(1);
-	//GPIOD->ODR=numeros[dig3]+D3;
-	//HAL_Delay(1);
+	GPIOD->ODR=numeros[dig3]+D3;
+	HAL_Delay(1);
 	GPIOD->ODR=numeros[dig4]+D4;
 	HAL_Delay(1);
 	GPIOD->ODR=numeros[dig5]+D5;
 	HAL_Delay(1);
-	//GPIOD->ODR=numeros[dig6]+D6;
-	//HAL_Delay(1);
+	GPIOD->ODR=numeros[dig6]+D6;
+	HAL_Delay(1);
 	GPIOD->ODR=numeros[dig7]+D7;
 	HAL_Delay(1);
 	GPIOD->ODR=numeros[dig8]+D8;
 	HAL_Delay(1);
 }
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	if(GPIO_Pin == GPIO_PIN_0){
-		if((HAL_GetTick() - tickAnterior) > tiempoDebounce){
-			ic++;
-			if(ic==4){
-				ic=0;
+/**
+  * @brief Decodifica un teclado matricial
+  * @param short numero de el pin donde
+  * se origino la interrupcion.
+  * @retval None
+  */
+void keyHandle(short columna){
+	if((HAL_GetTick() - tickAnterior) > tiempoDebounce){
+		HAL_Delay(5);
+		GPIOE->ODR=0x0;
+		for(short i=3;i>=0;i--){
+			HAL_GPIO_WritePin(GPIOE,row[i], GPIO_PIN_SET);
+			if(HAL_GPIO_ReadPin (GPIOA, column[columna])){
+				key=keys[i][columna];
 			}
-			tickAnterior = HAL_GetTick();
+			HAL_GPIO_WritePin(GPIOE,row[i], GPIO_PIN_RESET);
 		}
+		GPIOE->ODR=0x7800;
+		KeyboardNumber=((KeyboardNumber%10000000)*10+key);
+		tickAnterior = HAL_GetTick();
 	}
 }
 /* USER CODE END 0 */
@@ -188,8 +172,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
-  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -198,11 +180,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  displayNumber(KeyboardNumber);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  leerhora();
-	  displayNumber(dn);
   }
   /* USER CODE END 3 */
 }
@@ -215,7 +196,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
   */
@@ -224,10 +204,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 8;
@@ -251,124 +230,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * @brief ADC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC1_Init(void)
-{
-
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
-
-}
-
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-  /** Initialize RTC Only
-  */
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  sTime.Hours = 12;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_SUNDAY;
-  sDate.Month = RTC_MONTH_MARCH;
-  sDate.Date = 21;
-  sDate.Year = 21;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
-
 }
 
 /**
@@ -395,16 +256,21 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
                           |GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
                           |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : CS_I2C_SPI_Pin */
-  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
+  /*Configure GPIO pins : CS_I2C_SPI_Pin PE11 PE12 PE13
+                           PE14 */
+  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13
+                          |GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
   GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
@@ -421,11 +287,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(PDM_OUT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
+  /*Configure GPIO pins : B1_Pin PA1 PA2 PA3 */
+  GPIO_InitStruct.Pin = B1_Pin|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : I2S3_WS_Pin */
   GPIO_InitStruct.Pin = I2S3_WS_Pin;
@@ -498,18 +364,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : MEMS_INT2_Pin */
-  GPIO_InitStruct.Pin = MEMS_INT2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(MEMS_INT2_GPIO_Port, &GPIO_InitStruct);
-
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
 }
 
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
