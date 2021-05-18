@@ -141,7 +141,7 @@ void keyHandle(short columna) {
 			}
 			HAL_GPIO_WritePin(GPIOE, row[i], GPIO_PIN_RESET);
 		}
-		if (key == 's' || key == 'r' || key == 'm' || key == 'd' || key == 'i' || key == 'a') {
+		if (key > 9) {
 			if (key == 'i') {
 				if (lastk == 's') {
 					KeyboardNumber = nanterior + KeyboardNumber;
